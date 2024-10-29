@@ -64,8 +64,8 @@ export abstract class SKElement {
       this.recalculateBasis();
     }
   }
-  get height(): number | undefined {
-    return this._height;
+  get height(): number {
+    return this._height ?? 0;
   }
 
   // box: BoxModel = new BoxModel(this.recalculateBasis);
@@ -314,7 +314,7 @@ export abstract class SKElement {
   }
 
   public boxModelToString(): string {
-    // const s = JSON.stringify({
+        // const s = JSON.stringify({
     //   margin: this.margin,
     //   padding: this.padding,
     //   marginBox: this.marginBox,

@@ -29,7 +29,6 @@ export class SKButton extends SKElement {
   }
   set text(t: string) {
     this._text = t;
-    // console.log(`SKButton text = ${this.text} ${this.width} ${this.height}`);
     this.setMinimalSize(this.width, this.height);
   }
 
@@ -63,11 +62,43 @@ export class SKButton extends SKElement {
     this._highlightColour = hc;
   }
 
+  // Individual corner radii
+  protected _borderTopLeftRadius = 0;
+  protected _borderTopRightRadius = 0;
+  protected _borderBottomLeftRadius = 0;
+  protected _borderBottomRightRadius = 0;
+
+  set borderTopLeftRadius(r: number) {
+    this._borderTopLeftRadius = r;
+  }
+  get borderTopLeftRadius() {
+    return this._borderTopLeftRadius;
+  }
+
+  set borderTopRightRadius(r: number) {
+    this._borderTopRightRadius = r;
+  }
+  get borderTopRightRadius() {
+    return this._borderTopRightRadius;
+  }
+
+  set borderBottomLeftRadius(r: number) {
+    this._borderBottomLeftRadius = r;
+  }
+  get borderBottomLeftRadius() {
+    return this._borderBottomLeftRadius;
+  }
+
+  set borderBottomRightRadius(r: number) {
+    this._borderBottomRightRadius = r;
+  }
+  get borderBottomRightRadius() {
+    return this._borderBottomRightRadius;
+  }
 
   setMinimalSize(width?: number, height?: number) {
     width = width || this.width;
     height = height || this.height;
-    // need this if w or h not specified
     const m = measureText(this.text, this._font);
 
     if (!m) {
@@ -76,45 +107,34 @@ export class SKButton extends SKElement {
     }
 
     this.height = height || m.height + this.padding * 2;
-
     this.width = width || m.width + this.padding * 2;
-    // enforce a minimum width here (if no width specified)
     if (!width) this.width = Math.max(this.width, 80);
   }
 
   handleMouseEvent(me: SKMouseEvent) {
-    // console.log(`${this.text} ${me.type}`);
-
     switch (me.type) {
       case "mousedown":
         this.state = "down";
         requestMouseFocus(this);
         return true;
-        break;
       case "mouseup":
         this.state = "hover";
-        // return true if a listener was registered
         return this.sendEvent({
           source: this,
           timeStamp: me.timeStamp,
           type: "action",
         } as SKEvent);
-        break;
       case "mouseenter":
         this.state = "hover";
         return true;
-        break;
       case "mouseexit":
         this.state = "idle";
         return true;
-        break;
     }
     return false;
   }
 
   draw(gc: CanvasRenderingContext2D) {
-    // to save typing "this" so much
-
     gc.save();
 
     const w = this.paddingBox.width;
@@ -122,27 +142,51 @@ export class SKButton extends SKElement {
 
     gc.translate(this.margin, this.margin);
 
-    // thick highlight rect
     if (this.state == "hover" || this.state == "down") {
       gc.beginPath();
-      gc.roundRect(this.x, this.y, w, h, this.radius);
+      gc.moveTo(this.x + this._borderTopLeftRadius, this.y);
+      gc.lineTo(this.x + w - this._borderTopRightRadius, this.y);
+      gc.quadraticCurveTo(this.x + w, this.y, this.x + w, this.y + this._borderTopRightRadius);
+      gc.lineTo(this.x + w, this.y + h - this._borderBottomRightRadius);
+      gc.quadraticCurveTo(this.x + w, this.y + h, this.x + w - this._borderBottomRightRadius, this.y + h);
+      gc.lineTo(this.x + this._borderBottomLeftRadius, this.y + h);
+      gc.quadraticCurveTo(this.x, this.y + h, this.x, this.y + h - this._borderBottomLeftRadius);
+      gc.lineTo(this.x, this.y + this._borderTopLeftRadius);
+      gc.quadraticCurveTo(this.x, this.y, this.x + this._borderTopLeftRadius, this.y);
       gc.strokeStyle = this._highlightColour;
       gc.lineWidth = 8;
       gc.stroke();
     }
 
-    // normal background
     gc.beginPath();
-    gc.roundRect(this.x, this.y, w, h, this.radius);
-    gc.fillStyle =
-      this.state == "down" ? this._highlightColour : this.fill;
+    gc.moveTo(this.x + this._borderTopLeftRadius, this.y);
+    gc.lineTo(this.x + w - this._borderTopRightRadius, this.y);
+    gc.quadraticCurveTo(this.x + w, this.y, this.x + w, this.y + this._borderTopRightRadius);
+    gc.lineTo(this.x + w, this.y + h - this._borderBottomRightRadius);
+    gc.quadraticCurveTo(this.x + w, this.y + h, this.x + w - this._borderBottomRightRadius, this.y + h);
+    gc.lineTo(this.x + this._borderBottomLeftRadius, this.y + h);
+    gc.quadraticCurveTo(this.x, this.y + h, this.x, this.y + h - this._borderBottomLeftRadius);
+    gc.lineTo(this.x, this.y + this._borderTopLeftRadius);
+    gc.quadraticCurveTo(this.x, this.y, this.x + this._borderTopLeftRadius, this.y);
+
+    const gradient = gc.createLinearGradient(this.x, this.y, this.x, this.y + h);
+    gradient.addColorStop(0, "#ffffff");
+    gradient.addColorStop(1, this.fill);
+
+    gc.fillStyle = gradient;
+    gc.fill();
+
+    gc.shadowColor = "rgba(0, 0, 0, 0.3)";
+    gc.shadowBlur = 10;
+    gc.shadowOffsetX = 0;
+    gc.shadowOffsetY = 5;
+
     gc.strokeStyle = this.border;
     // change fill to show down state
     gc.lineWidth = this.state == "down" ? 4 : 2;
-    gc.fill();
     gc.stroke();
     gc.clip(); // clip text if it's wider than text area
-
+    
     // button label
     gc.font = this._font;
     gc.fillStyle = this._fontColour;

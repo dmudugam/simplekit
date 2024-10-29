@@ -1,5 +1,4 @@
 import { measureText } from "../utility";
-
 import { SKElement, SKElementProps } from "./element";
 import { Style } from "./style";
 
@@ -38,12 +37,38 @@ export class SKLabel extends SKElement {
     this.setMinimalSize(this.width, this.height);
   }
 
-  protected _radius = 0;
-  set radius(r: number){
-    this._radius = r;
+  // Individual corner radii
+  protected _borderTopLeftRadius = 0;
+  protected _borderTopRightRadius = 0;
+  protected _borderBottomLeftRadius = 0;
+  protected _borderBottomRightRadius = 0;
+
+  set borderTopLeftRadius(r: number) {
+    this._borderTopLeftRadius = r;
   }
-  get radius(){
-    return this._radius;
+  get borderTopLeftRadius() {
+    return this._borderTopLeftRadius;
+  }
+
+  set borderTopRightRadius(r: number) {
+    this._borderTopRightRadius = r;
+  }
+  get borderTopRightRadius() {
+    return this._borderTopRightRadius;
+  }
+
+  set borderBottomLeftRadius(r: number) {
+    this._borderBottomLeftRadius = r;
+  }
+  get borderBottomLeftRadius() {
+    return this._borderBottomLeftRadius;
+  }
+
+  set borderBottomRightRadius(r: number) {
+    this._borderBottomRightRadius = r;
+  }
+  get borderBottomRightRadius() {
+    return this._borderBottomRightRadius;
   }
 
   protected _font = Style.font;
@@ -73,7 +98,6 @@ export class SKLabel extends SKElement {
     }
 
     this.height = height || m.height + this.padding * 2;
-
     this.width = width || m.width + this.padding * 2;
   }
 
@@ -85,19 +109,41 @@ export class SKLabel extends SKElement {
 
     gc.translate(this.margin, this.margin);
 
-    if(this.fill){
+    if (this.fill) {
+      // Create gradient
+      const gradient = gc.createLinearGradient(this.x, this.y, this.x, this.y + h);
+      gradient.addColorStop(0, "#ffffff"); // Light color at the top
+      gradient.addColorStop(1, this.fill); // Original fill color at the bottom
+
       gc.beginPath();
-      gc.roundRect(this.x, this.y, w, h, this._radius);
-      gc.fillStyle =  this.fill;
+      gc.moveTo(this.x + this._borderTopLeftRadius, this.y);
+      gc.lineTo(this.x + w - this._borderTopRightRadius, this.y);
+      gc.quadraticCurveTo(this.x + w, this.y, this.x + w, this.y + this._borderTopRightRadius);
+      gc.lineTo(this.x + w, this.y + h - this._borderBottomRightRadius);
+      gc.lineTo(this.x + w, this.y + h);
+      gc.lineTo(this.x, this.y + h);
+      gc.lineTo(this.x, this.y + h - this._borderBottomLeftRadius);
+      gc.lineTo(this.x, this.y + this._borderTopLeftRadius);
+      gc.quadraticCurveTo(this.x, this.y, this.x + this._borderTopLeftRadius, this.y);
+      gc.closePath();
+
+      // Apply gradient fill
+      gc.fillStyle = gradient;
       gc.fill();
+
+      // Add shadow for bubbly effect
+      gc.shadowColor = "rgba(0, 0, 0, 0.3)";
+      gc.shadowBlur = 10;
+      gc.shadowOffsetX = 0;
+      gc.shadowOffsetY = 5;
     }
-    
-    if(this.border){
+
+    if (this.border) {
       gc.strokeStyle = this.border;
       gc.lineWidth = 1;
       gc.stroke();
     }
-    
+
     // render text
     gc.font = this._font;
     gc.fillStyle = this._fontColour;

@@ -8,6 +8,9 @@ import { SKElement, SKElementProps } from "./element";
 type SKContainerProps = SKElementProps & {};
 
 export class SKContainer extends SKElement {
+  private _backgroundImageSrc: string | null = null;
+  private _backgroundImage: HTMLImageElement | null = null;
+
   constructor(elementProps: SKContainerProps = {}) {
     super(elementProps);
     this.calculateBasis();
@@ -83,22 +86,60 @@ export class SKContainer extends SKElement {
 
   //#endregion
 
+  //#region background image
+
+  set backgroundImageSrc(src: string | null) {
+    this._backgroundImageSrc = src;
+    if (src) {
+      this._backgroundImage = new Image();
+      this._backgroundImage.src = src;
+      this._backgroundImage.onload = () => {
+        invalidateLayout();
+      };
+    } else {
+      this._backgroundImage = null;
+    }
+  }
+
+  get backgroundImageSrc() {
+    return this._backgroundImageSrc;
+  }
+
+  //#endregion
+
   draw(gc: CanvasRenderingContext2D) {
     gc.save();
     // set coordinate system to padding box
     gc.translate(this.margin, this.margin);
-    
+
     const w = this.paddingBox.width;
     const h = this.paddingBox.height;
 
-    if(this.fill){
+    if (this._backgroundImage) {
+      gc.globalAlpha = 0.7; // Set transparency level (0.7 for 70% transparency)
+      gc.drawImage(this._backgroundImage, this.x, this.y, w, h);
+      gc.globalAlpha = 1.0; // Reset to default value
+    } else if (this.fill) {
       gc.beginPath();
       gc.roundRect(this.x, this.y, w, h, this._radius);
-      gc.fillStyle =  this.fill;
+
+      // Create gradient
+      const gradient = gc.createLinearGradient(this.x, this.y, this.x, this.y + h);
+      gradient.addColorStop(0, "#ffffff"); // Light color at the top
+      gradient.addColorStop(1, this.fill); // Original fill color at the bottom
+
+      // Apply gradient fill
+      gc.fillStyle = gradient;
       gc.fill();
+
+      // Add shadow for bubbly effect
+      gc.shadowColor = "rgba(0, 0, 0, 0.3)";
+      gc.shadowBlur = 10;
+      gc.shadowOffsetX = 0;
+      gc.shadowOffsetY = 5;
     }
-    
-    if(this.border){
+
+    if (this.border) {
       gc.strokeStyle = this.border;
       gc.lineWidth = 1;
       gc.stroke();
