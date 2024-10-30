@@ -10,6 +10,7 @@ type SKContainerProps = SKElementProps & {};
 export class SKContainer extends SKElement {
   private _backgroundImageSrc: string | null = null;
   private _backgroundImage: HTMLImageElement | null = null;
+  private _visible = true; // Add a visible property
 
   constructor(elementProps: SKContainerProps = {}) {
     super(elementProps);
@@ -18,11 +19,20 @@ export class SKContainer extends SKElement {
   }
 
   protected _radius = 0;
-  set radius(r: number){
+  set radius(r: number) {
     this._radius = r;
   }
-  get radius(){
+  get radius() {
     return this._radius;
+  }
+
+  // Add getter and setter for the visible property
+  set visible(v: boolean) {
+    this._visible = v;
+    invalidateLayout();
+  }
+  get visible() {
+    return this._visible;
   }
 
   //#region managing children
@@ -108,6 +118,8 @@ export class SKContainer extends SKElement {
   //#endregion
 
   draw(gc: CanvasRenderingContext2D) {
+    if (!this._visible) return; // Check visibility before drawing
+
     gc.save();
     // set coordinate system to padding box
     gc.translate(this.margin, this.margin);

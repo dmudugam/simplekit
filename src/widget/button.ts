@@ -5,23 +5,26 @@ import { SKEvent, SKMouseEvent } from "../events";
 
 import { requestMouseFocus } from "../dispatch";
 
-export type SKButtonProps = SKElementProps & { text?: string };
+export type SKButtonProps = SKElementProps & { text?: string; hoverFill?: string };
 
 export class SKButton extends SKElement {
   constructor({ 
     text = "", 
     fill = "lightgrey",
+    hoverFill = "darkgrey",
     ...elementProps
   }: SKButtonProps = {}) {
     super(elementProps);
     this.padding = Style.textPadding;
     this.text = text;
     this.fill = fill;
+    this.hoverFill = hoverFill;
     this.calculateBasis();
     this.doLayout();
   }
 
   state: "idle" | "hover" | "down" = "idle";
+  public enabled: boolean = true; // Add enabled property
 
   protected _text = "";
   get text() {
@@ -60,6 +63,14 @@ export class SKButton extends SKElement {
   protected _highlightColour = Style.highlightColour;
   set highlightColour(hc: string){
     this._highlightColour = hc;
+  }
+
+  protected _hoverFill = "darkgrey";
+  set hoverFill(hf: string) {
+    this._hoverFill = hf;
+  }
+  get hoverFill() {
+    return this._hoverFill;
   }
 
   // Individual corner radii
@@ -112,6 +123,8 @@ export class SKButton extends SKElement {
   }
 
   handleMouseEvent(me: SKMouseEvent) {
+    if (!this.enabled) return false; // Ignore events if the button is disabled
+
     switch (me.type) {
       case "mousedown":
         this.state = "down";
@@ -171,9 +184,9 @@ export class SKButton extends SKElement {
 
     const gradient = gc.createLinearGradient(this.x, this.y, this.x, this.y + h);
     gradient.addColorStop(0, "#ffffff");
-    gradient.addColorStop(1, this.fill);
+    gradient.addColorStop(1, this.state == "hover" ? this._hoverFill : this.fill);
 
-    gc.fillStyle = gradient;
+    gc.fillStyle = this.enabled ? gradient : "grey"; // Change fill color if disabled
     gc.fill();
 
     gc.shadowColor = "rgba(0, 0, 0, 0.3)";
@@ -182,21 +195,18 @@ export class SKButton extends SKElement {
     gc.shadowOffsetY = 5;
 
     gc.strokeStyle = this.border;
-    // change fill to show down state
     gc.lineWidth = this.state == "down" ? 4 : 2;
     gc.stroke();
-    gc.clip(); // clip text if it's wider than text area
-    
-    // button label
+    gc.clip();
+
     gc.font = this._font;
-    gc.fillStyle = this._fontColour;
+    gc.fillStyle = this.enabled ? this._fontColour : "darkgrey"; // Change font color if disabled
     gc.textAlign = "center";
     gc.textBaseline = "middle";
     gc.fillText(this.text, this.x + w / 2, this.y + h / 2);
 
     gc.restore();
 
-    // element draws debug viz if flag is set
     super.draw(gc);
   }
 
